@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -16,13 +17,12 @@ internal partial class MainViewModel : ObservableObject
         try
         {
             var hexString = InternalCode.Replace(" ", "");
-            
             Ieee754Code = ConvertInternalCodeToIeee754(hexString).ToString("X");
             FloatValue = GetFloatFromHexString(Ieee754Code).ToString("0.0000");
         }
-        catch (FormatException e)
+        catch (Exception)
         {
-            Console.WriteLine($"Błąd: {e.Message}");
+            ShowErrorMsg();
         }
     }
 
@@ -30,15 +30,14 @@ internal partial class MainViewModel : ObservableObject
     private void Ieee754ToInternal()
     {
         try
-        {
+        { 
             var hexString = Ieee754Code.Replace(" ", "");
-
             FloatValue = GetFloatFromHexString(hexString).ToString("0.0000");
             InternalCode = ConvertIeee754ToInternalCode(hexString).ToString("X8");
         }
-        catch (FormatException e)
+        catch (Exception)
         {
-            Console.WriteLine($"Błąd: {e.Message}");
+            ShowErrorMsg();
         }
 
     }
@@ -92,4 +91,6 @@ internal partial class MainViewModel : ObservableObject
         var floatVal = BitConverter.GetBytes(num);
         return BitConverter.ToSingle(floatVal, 0);
     }
+
+    private static void ShowErrorMsg() => MessageBox.Show("Wystąpił błąd!", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
 }
