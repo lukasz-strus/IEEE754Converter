@@ -1,5 +1,4 @@
 ﻿using System.Globalization;
-using System.Numerics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -9,52 +8,88 @@ internal partial class MainViewModel : ObservableObject
 {
     [ObservableProperty] private string _internalCode = string.Empty;
     [ObservableProperty] private string _ieee754Code = string.Empty;
+    [ObservableProperty] private string _floatValue = string.Empty;
 
     [RelayCommand]
     private void InternalToIeee754()
     {
-        var internalCode = uint.Parse(InternalCode, NumberStyles.HexNumber);
-        var ieee754Code = ConvertInternalToIEEE754(internalCode);
-        Ieee754Code = ieee754Code.ToString("X8");
+        try
+        {
+            var hexString = InternalCode.Replace(" ", "");
+            
+            Ieee754Code = ConvertInternalCodeToIeee754(hexString).ToString("X");
+            FloatValue = GetFloatFromHexString(Ieee754Code).ToString("0.0000");
         }
+        catch (FormatException e)
+        {
+            Console.WriteLine($"Błąd: {e.Message}");
+        }
+    }
 
     [RelayCommand]
     private void Ieee754ToInternal()
     {
-        var ieee754Code = uint.Parse(Ieee754Code, NumberStyles.HexNumber);
-        var internalCode = ConvertIEEE754ToInternal(ieee754Code);
-        InternalCode = internalCode.ToString("X8");
+        try
+        {
+            var hexString = Ieee754Code.Replace(" ", "");
+
+            FloatValue = GetFloatFromHexString(hexString).ToString("0.0000");
+            InternalCode = ConvertIeee754ToInternalCode(hexString).ToString("X8");
+        }
+        catch (FormatException e)
+        {
+            Console.WriteLine($"Błąd: {e.Message}");
+        }
+
     }
 
-    private uint ConvertInternalToIEEE754(uint internalCode)
+    private static ulong ConvertInternalCodeToIeee754(string hexString)
     {
-        // Rozdzielenie kodu wewnętrznego na części
-        int sign = (int)((internalCode & 0x80000000) >> 31);
-        int exponentInternal = (int)((internalCode & 0x7F800000) >> 23);
-        uint mantissa = internalCode & 0x007FFFFF;
+        var internalInt = uint.Parse(hexString, NumberStyles.AllowHexSpecifier);
 
-        // Przekształcenie wykładnika
-        int exponentIEEE = exponentInternal - 127 + 127;
+        var bits = Convert.ToString(internalInt, 2).PadLeft(32, '0');
 
-        // Złożenie wartości IEEE 754
-        uint ieee754 = (uint)((sign << 31) | (exponentIEEE << 23) | mantissa);
+        var signBit = bits[..1];
+        var exponentBits = bits.Substring(1, 8);
+        var mantissaBits = bits[9..];
 
-        return ieee754;
+        var exponent = Convert.ToInt32(exponentBits, 2);
+        exponent >>= 1;
+        exponent += 127;
+        exponentBits = Convert.ToString(exponent, 2).PadLeft(8, '0');
+
+        signBit = signBit == "0" ? "1" : "0";
+
+        var newBits = signBit + exponentBits + mantissaBits;
+        return Convert.ToUInt32(newBits, 2);
     }
 
-    private uint ConvertIEEE754ToInternal(uint ieee754Code)
+    private static ulong ConvertIeee754ToInternalCode(string hexString)
     {
-        // Rozdzielenie kodu IEEE 754 na części
-        int sign = (int)((ieee754Code & 0x80000000) >> 31);
-        int exponentIEEE = (int)((ieee754Code & 0x7F800000) >> 23);
-        uint mantissa = ieee754Code & 0x007FFFFF;
+        var ieee754Int = uint.Parse(hexString, NumberStyles.AllowHexSpecifier);
 
-        // Przekształcenie wykładnika
-        int exponentInternal = exponentIEEE - 127 + 127;
+        var bits = Convert.ToString(ieee754Int, 2).PadLeft(32, '0');
 
-        // Złożenie wartości wewnętrznej
-        uint internalCode = (uint)((sign << 31) | (exponentInternal << 23) | mantissa);
+        var signBit = bits[..1];
+        var exponentBits = bits.Substring(1, 8);
+        var mantissaBits = bits[9..];
 
-        return internalCode;
+        var exponent = Convert.ToInt32(exponentBits, 2);
+        exponent -= 127;
+        exponent <<= 1;
+        exponentBits = Convert.ToString(exponent, 2).PadLeft(8, '0');
+
+        signBit = signBit == "0" ? "1" : "0";
+
+        var newBits = signBit + exponentBits + mantissaBits;
+        return Convert.ToUInt32(newBits, 2);
+    }
+
+
+    private static float GetFloatFromHexString(string hexString)
+    {
+        var num = uint.Parse(hexString, NumberStyles.AllowHexSpecifier);
+        var floatVal = BitConverter.GetBytes(num);
+        return BitConverter.ToSingle(floatVal, 0);
     }
 }

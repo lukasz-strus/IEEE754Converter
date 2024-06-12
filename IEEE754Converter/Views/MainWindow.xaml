@@ -18,6 +18,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="150" />
@@ -62,6 +63,18 @@
                 HorizontalAlignment="Center"
                 Command="{Binding Ieee754ToInternalCommand}"
                 Content="Przelicz na kod wewnętrzny" />
+            <Label
+                Grid.Row="2"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Content="Liczba" />
+            <TextBox
+                Grid.Row="2"
+                Grid.Column="1"
+                Width="200"
+                Margin="5"
+                IsEnabled="False"
+                Text="{Binding FloatValue}" />
 
         </Grid>
     </Grid>
