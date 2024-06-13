@@ -17,6 +17,14 @@ internal partial class MainViewModel : ObservableObject
         try
         {
             var hexString = InternalCode.Replace(" ", "");
+
+            if (hexString == "00000000")
+            {
+                Ieee754Code = "00000000";
+                FloatValue = "0.0000";
+                return;
+            }
+
             Ieee754Code = ConvertInternalCodeToIeee754(hexString).ToString("X");
             FloatValue = GetFloatFromHexString(Ieee754Code).ToString("0.0000");
         }
@@ -32,6 +40,14 @@ internal partial class MainViewModel : ObservableObject
         try
         { 
             var hexString = Ieee754Code.Replace(" ", "");
+
+            if(hexString == "00000000")
+            {
+                InternalCode = "00000000";
+                FloatValue = "0.0000";
+                return;
+            }
+
             FloatValue = GetFloatFromHexString(hexString).ToString("0.0000");
             InternalCode = ConvertIeee754ToInternalCode(hexString).ToString("X8");
         }
@@ -92,5 +108,5 @@ internal partial class MainViewModel : ObservableObject
         return BitConverter.ToSingle(floatVal, 0);
     }
 
-    private static void ShowErrorMsg() => MessageBox.Show("Wystąpił błąd!", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
+    private static void ShowErrorMsg() => MessageBox.Show("Nieprawidłowa wartość!", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
 }
