@@ -16,17 +16,25 @@ internal partial class MainViewModel : ObservableObject
     {
         try
         {
-            var hexString = InternalCode.Replace(" ", "");
-
-            if (hexString == "00000000")
+            var inputString = InternalCode.Replace(" ", "");
+            if (inputString == "00000000")
             {
                 Ieee754Code = "00000000";
                 FloatValue = "0.0000";
                 return;
             }
 
-            Ieee754Code = ConvertInternalCodeToIeee754(hexString).ToString("X");
-            FloatValue = GetFloatFromHexString(Ieee754Code).ToString("0.0000");
+            var isInputBinary = IsBinary(inputString);
+
+            var convertedValue = Convert.ToUInt64(inputString, isInputBinary ? 2 : 16);
+
+            var ieee754Value = ConvertInternalCodeToIeee754(convertedValue.ToString("X"), out var newBits);
+
+            Ieee754Code = isInputBinary 
+                ? newBits
+                : ieee754Value.ToString("X");
+
+            FloatValue = GetFloatFromHexString(ieee754Value.ToString("X")).ToString("0.0000");
         }
         catch (Exception)
         {
@@ -38,18 +46,23 @@ internal partial class MainViewModel : ObservableObject
     private void Ieee754ToInternal()
     {
         try
-        { 
-            var hexString = Ieee754Code.Replace(" ", "");
-
-            if(hexString == "00000000")
+        {
+            var inputString = Ieee754Code.Replace(" ", "");
+            if (inputString == "00000000")
             {
                 InternalCode = "00000000";
                 FloatValue = "0.0000";
                 return;
             }
+            var isInputBinary = IsBinary(inputString); 
 
-            FloatValue = GetFloatFromHexString(hexString).ToString("0.0000");
-            InternalCode = ConvertIeee754ToInternalCode(hexString).ToString("X8");
+            var convertedValue = Convert.ToUInt64(inputString, isInputBinary ? 2 : 16);
+
+            var internalValue = ConvertIeee754ToInternalCode(convertedValue.ToString("X"), out var newBits);
+            InternalCode = isInputBinary 
+                ? newBits
+                : internalValue.ToString("X8");
+            FloatValue = GetFloatFromHexString(convertedValue.ToString("X")).ToString("0.0000");
         }
         catch (Exception)
         {
@@ -58,7 +71,7 @@ internal partial class MainViewModel : ObservableObject
 
     }
 
-    private static ulong ConvertInternalCodeToIeee754(string hexString)
+    private static ulong ConvertInternalCodeToIeee754(string hexString, out string newBits)
     {
         var internalInt = uint.Parse(hexString, NumberStyles.AllowHexSpecifier);
 
@@ -75,11 +88,11 @@ internal partial class MainViewModel : ObservableObject
 
         signBit = signBit == "0" ? "1" : "0";
 
-        var newBits = signBit + exponentBits + mantissaBits;
+        newBits = signBit + exponentBits + mantissaBits;
         return Convert.ToUInt32(newBits, 2);
     }
 
-    private static ulong ConvertIeee754ToInternalCode(string hexString)
+    private static ulong ConvertIeee754ToInternalCode(string hexString, out string newBits)
     {
         var ieee754Int = uint.Parse(hexString, NumberStyles.AllowHexSpecifier);
 
@@ -96,7 +109,7 @@ internal partial class MainViewModel : ObservableObject
 
         signBit = signBit == "0" ? "1" : "0";
 
-        var newBits = signBit + exponentBits + mantissaBits;
+        newBits = signBit + exponentBits + mantissaBits;
         return Convert.ToUInt32(newBits, 2);
     }
 
@@ -107,6 +120,8 @@ internal partial class MainViewModel : ObservableObject
         var floatVal = BitConverter.GetBytes(num);
         return BitConverter.ToSingle(floatVal, 0);
     }
+
+    private static bool IsBinary(string input) => input.All(c => c is '0' or '1');
 
     private static void ShowErrorMsg() => MessageBox.Show("Nieprawidłowa wartość!", "Błąd", MessageBoxButton.OK, MessageBoxImage.Error);
 }
